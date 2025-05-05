@@ -3,19 +3,26 @@ package com.example.lib_with_db
 
 import android.content.Context
 import android.util.Log
+import android.util.Log.e
+import android.widget.Toast
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import retrofit2.Retrofit
 import kotlin.random.Random
 
 class ItemViewModel(context: Context) : ViewModel() {
     private val repository: ItemRepository
+    private val googleBookRepository by lazy {
+        RemoteBooksRepository(RetrofitHelper.createRetrofit())
+    }
 
     enum class SortType { BY_NAME, BY_DATE }
 
@@ -44,7 +51,7 @@ class ItemViewModel(context: Context) : ViewModel() {
     private var currentOffset = 0
     private var isForwardPagination = true
     private var totalItemsInDb = 0
-
+    private var searchJob: Job? = null
     private var errorPeriod = getRandom()
     private var operationCount: Int = 0
 
@@ -57,7 +64,6 @@ class ItemViewModel(context: Context) : ViewModel() {
         repository = ItemRepository(db.itemDao(), db.sortPreferenceDao())
 
         viewModelScope.launch {
-            repository.fillLargeData()
             val savedSortType = repository.getSortPreference()
             _sortType.value = savedSortType
             loadInitialItems()
@@ -268,4 +274,44 @@ class ItemViewModel(context: Context) : ViewModel() {
     }
 
     private fun getRandom(): Int = Random.nextInt(2, 6)
+    fun clearItems() {
+        _items.value = emptyList<Item>()
+    }
+
+    fun searchBook(query: String) {
+
+
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch {
+            _isLoading.value = true
+            _errorEvent.value = null
+
+            try {
+                val result = googleBookRepository.getBooks(query)
+                _items.value = if (result.isNotEmpty()) {
+                    result
+                } else {
+                    emptyList()
+                }
+                _isLoading.value = false
+            } catch (e: Exception) {
+                _errorEvent.postValue("Ошибка поиска")
+                _isLoading.value = false
+                _items.value = emptyList()
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun handleLongClick(item: Item) {
+        viewModelScope.launch(Dispatchers.IO) {
+            if (!repository.isItemInDB(item) && item is Book) {
+                addItem(item)
+            }
+
+        }
+    }
+
+
 }

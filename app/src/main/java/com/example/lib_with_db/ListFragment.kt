@@ -23,9 +23,7 @@ class ListFragment : Fragment() {
     private lateinit var layoutManager: LinearLayoutManager
 
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
         _binding = FragmentListBinding.inflate(inflater, container, false)
         layoutManager = LinearLayoutManager(requireContext())
@@ -33,56 +31,89 @@ class ListFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        adapter = ItemAdapter(
+            onClick = { item -> viewModel.selectItem(item) },
+            onLongClick = { item -> viewModel.handleLongClick(item) },
+            context
+        )
 
-        adapter = ItemAdapter {
-
-            viewModel.selectItem(it)
-            viewModel.errorEvent.observe(viewLifecycleOwner) { errorMessage ->
-                errorMessage?.let {
-                    AlertDialog.Builder(requireContext())
-                        .setTitle("Error")
-                        .setMessage(it)
-                        .setPositiveButton("OK") { _, _ ->
-                            viewModel.clearError()
-                        }
-                        .show()
-                }
+        viewModel.errorEvent.observe(viewLifecycleOwner) { errorMessage ->
+            errorMessage?.let {
+                AlertDialog.Builder(requireContext()).setTitle("Error").setMessage(it)
+                    .setPositiveButton("OK") { _, _ ->
+                        viewModel.clearError()
+                    }.show()
             }
 
 
         }
-
         binding.recyclerView.adapter = adapter
         binding.recyclerView.layoutManager = layoutManager
 
         viewModel.items.observe(viewLifecycleOwner) { items ->
             if (_binding != null) {
-                adapter.submitList(items)
-            }
-        }
+                adapter.submitList(items) {
+                    binding.recyclerView.post {
+                        binding.recyclerView.visibility = View.VISIBLE
 
-        lifecycleScope.launch {
-
-            viewModel.isLoading.collect { isLoading ->
-                if (_binding != null) {
-                    binding.apply {
-                        shimmer.visibility = if (isLoading) View.VISIBLE else View.GONE
-                        recyclerView.visibility = if (isLoading) View.GONE else View.VISIBLE
-                        if (isLoading) shimmer.startShimmer()
-                        else shimmer.stopShimmer()
                     }
                 }
             }
-        }
+            lifecycleScope.launch {
 
-        viewModel.scrollToLast.observe(viewLifecycleOwner) { scroll ->
-            if (scroll) {
-                val position = viewModel.scrollPosition.value ?: 0
-                binding.recyclerView.post {
-                    layoutManager.scrollToPosition(position)
-                    viewModel.resetScrollFlag()
+                viewModel.isLoading.collect { isLoading ->
+                    if (_binding != null) {
+                        binding.apply {
+                            shimmer.visibility = if (isLoading) View.VISIBLE else View.GONE
+                            recyclerView.visibility = if (isLoading) View.GONE else View.VISIBLE
+                            if (isLoading) shimmer.startShimmer()
+                            else shimmer.stopShimmer()
+                        }
+                    }
                 }
             }
+            viewModel.scrollToLast.observe(viewLifecycleOwner) { scroll ->
+                if (scroll) {
+                    val position = viewModel.scrollPosition.value ?: 0
+                    binding.recyclerView.post {
+                        layoutManager.scrollToPosition(position)
+                        viewModel.resetScrollFlag()
+                    }
+                }
+            }
+
+
+            binding.googleBooksBtn.setOnClickListener {
+                binding.searchLayout.visibility = View.VISIBLE
+                binding.recyclerView.visibility = View.INVISIBLE
+                binding.sortBtn.visibility = View.INVISIBLE
+                viewModel.clearItems()
+            }
+
+
+            binding.libraryBtn.setOnClickListener {
+                binding.searchLayout.visibility = View.GONE
+                binding.sortBtn.visibility = View.VISIBLE
+                binding.recyclerView.visibility = View.VISIBLE
+                lifecycleScope.launch {
+                    viewModel.loadItems()
+                }
+
+            }
+
+        }
+        binding.searchBtn.setOnClickListener {
+
+            binding.recyclerView.visibility = View.VISIBLE
+            val query = binding.inputName.text.toString()
+                .replace(" ", "") + binding.inputAuthor.text.toString().replace(" ", "")
+            if (query.length > 2) viewModel.searchBook(query)
+            else {
+                AlertDialog.Builder(requireContext()).setTitle("Error")
+                    .setMessage("Запрос слишком короткий").setPositiveButton("OK") { _, _ ->
+                    }.show()
+            }
+
         }
 
         binding.sortBtn.setOnClickListener {
