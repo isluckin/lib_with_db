@@ -18,21 +18,21 @@ interface ItemDao {
 
 
     @Query("SELECT * FROM book_details WHERE itemId = :itemId")
-    suspend fun getBookDetails(itemId: Int): BookDetailsEntity?
+    suspend fun getBookDetails(itemId: String): BookDetailsEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertNewspaperDetails(details: NewspaperDetailsEntity)
 
 
     @Query("SELECT * FROM newspaper_details WHERE itemId = :itemId")
-    suspend fun getNewspaperDetails(itemId: Int): NewspaperDetailsEntity?
+    suspend fun getNewspaperDetails(itemId: String): NewspaperDetailsEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertDiskDetails(details: DiskDetailsEntity)
 
 
     @Query("SELECT * FROM disk_details WHERE itemId = :itemId")
-    suspend fun getDiskDetails(itemId: Int): DiskDetailsEntity?
+    suspend fun getDiskDetails(itemId: String): DiskDetailsEntity?
 
 
     @Query("SELECT COUNT(*) FROM base_items WHERE type = 'book'")
@@ -49,24 +49,22 @@ interface ItemDao {
 
     @Query("SELECT * FROM base_items WHERE type = :type ORDER BY createdAt DESC LIMIT :limit OFFSET :offset")
     suspend fun getBaseItemsByTypeWithLimit(
-        type: String,
-        offset: Int,
-        limit: Int
+        type: String, offset: Int, limit: Int
     ): List<BaseItemEntity>
 
     @Query("SELECT * FROM base_items WHERE type = :type ORDER BY name ASC LIMIT :limit OFFSET :offset")
     suspend fun getBaseItemsByTypeSortedByName(
-        type: String,
-        offset: Int,
-        limit: Int
+        type: String, offset: Int, limit: Int
     ): List<BaseItemEntity>
 
     @Query("SELECT * FROM base_items WHERE type = :type ORDER BY createdAt DESC LIMIT :limit OFFSET :offset")
     suspend fun getBaseItemsByTypeSortedByDate(
-        type: String,
-        offset: Int,
-        limit: Int
+        type: String, offset: Int, limit: Int
     ): List<BaseItemEntity>
 
+    @Query("SELECT COUNT(*) FROM base_items WHERE (id = :id)")
+    suspend fun isItemInDB(
+        id: String?
+    ): Boolean
 
 }
