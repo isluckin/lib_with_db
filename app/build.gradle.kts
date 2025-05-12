@@ -10,6 +10,7 @@ plugins {
     id("kotlin-parcelize")
     id("com.google.devtools.ksp")
     id ("org.jetbrains.kotlin.plugin.serialization") version "2.0.0"
+    id ("kotlin-android")
 
 }
 

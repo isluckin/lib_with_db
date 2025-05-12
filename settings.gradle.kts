@@ -21,4 +21,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "lib_with_db"
 include(":app")
- 
+include(":app:common")
+include(":app:data")

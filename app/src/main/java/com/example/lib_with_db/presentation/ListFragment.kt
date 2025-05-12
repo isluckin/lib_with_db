@@ -1,0 +1,143 @@
+package com.example.lib_with_db.presentation
+
+
+import android.app.AlertDialog
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.lib_with_db.presentation.adapter.ItemAdapter
+import com.example.lib_with_db.presentation.view_model.ItemViewModel
+import com.example.lib_with_db.presentation.view_model.ItemViewModel.SortType
+import com.example.lib_with_db.databinding.FragmentListBinding
+import kotlinx.coroutines.launch
+
+class ListFragment : Fragment() {
+
+    private var _binding: FragmentListBinding? = null
+    private val binding get() = _binding!!
+    private val viewModel: ItemViewModel by activityViewModels()
+    private lateinit var adapter: ItemAdapter
+    private lateinit var layoutManager: LinearLayoutManager
+
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
+    ): View {
+        _binding = FragmentListBinding.inflate(inflater, container, false)
+        layoutManager = LinearLayoutManager(requireContext())
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        adapter = ItemAdapter(
+            onClick = { item -> viewModel.selectItem(item) },
+            onLongClick = { item -> viewModel.handleLongClick(item) },
+            context
+        )
+
+        viewModel.errorEvent.observe(viewLifecycleOwner) { errorMessage ->
+            errorMessage?.let {
+                AlertDialog.Builder(requireContext()).setTitle("Error").setMessage(it)
+                    .setPositiveButton("OK") { _, _ ->
+                        viewModel.clearError()
+                    }.show()
+            }
+
+
+        }
+        binding.recyclerView.adapter = adapter
+        binding.recyclerView.layoutManager = layoutManager
+
+        viewModel.items.observe(viewLifecycleOwner) { items ->
+            if (_binding != null) {
+                adapter.submitList(items) {
+                    binding.recyclerView.post {
+                        binding.recyclerView.visibility = View.VISIBLE
+
+                    }
+                }
+            }
+            lifecycleScope.launch {
+
+                viewModel.isLoading.collect { isLoading ->
+                    if (_binding != null) {
+                        binding.apply {
+                            shimmer.visibility = if (isLoading) View.VISIBLE else View.GONE
+                            recyclerView.visibility = if (isLoading) View.GONE else View.VISIBLE
+                            if (isLoading) shimmer.startShimmer()
+                            else shimmer.stopShimmer()
+                        }
+                    }
+                }
+            }
+            viewModel.scrollToLast.observe(viewLifecycleOwner) { scroll ->
+                if (scroll) {
+                    val position = viewModel.scrollPosition.value ?: 0
+                    binding.recyclerView.post {
+                        layoutManager.scrollToPosition(position)
+                        viewModel.resetScrollFlag()
+                    }
+                }
+            }
+
+
+            binding.googleBooksBtn.setOnClickListener {
+                binding.searchLayout.visibility = View.VISIBLE
+                binding.recyclerView.visibility = View.INVISIBLE
+                binding.sortBtn.visibility = View.INVISIBLE
+                viewModel.clearItems()
+            }
+
+
+            binding.libraryBtn.setOnClickListener {
+                binding.searchLayout.visibility = View.GONE
+                binding.sortBtn.visibility = View.VISIBLE
+                binding.recyclerView.visibility = View.VISIBLE
+                lifecycleScope.launch {
+                    viewModel.loadItems()
+                }
+
+            }
+
+        }
+        binding.searchBtn.setOnClickListener {
+
+            binding.recyclerView.visibility = View.VISIBLE
+            val query = binding.inputName.text.toString()
+                .replace(" ", "") + binding.inputAuthor.text.toString().replace(" ", "")
+            if (query.length > 2) viewModel.searchBook(query)
+            else {
+                AlertDialog.Builder(requireContext()).setTitle("Error")
+                    .setMessage("Запрос слишком короткий").setPositiveButton("OK") { _, _ ->
+                    }.show()
+            }
+
+        }
+
+        binding.sortBtn.setOnClickListener {
+            viewModel.setSortType(
+                when (viewModel.getSortType()) {
+                    SortType.BY_NAME -> SortType.BY_DATE
+                    SortType.BY_DATE -> SortType.BY_NAME
+                    null -> SortType.BY_NAME
+                }
+            )
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        val position = layoutManager.findFirstVisibleItemPosition()
+        viewModel.setScrollPos(position)
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+
+}
