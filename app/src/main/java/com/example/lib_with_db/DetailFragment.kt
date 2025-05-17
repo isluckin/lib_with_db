@@ -9,6 +9,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
+import com.bumptech.glide.Glide
 import com.example.lib_with_db.databinding.FragmentDetailBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -107,7 +108,16 @@ class DetailFragment : Fragment() {
 
     private fun fillItemData() {
         item?.let { item ->
-            binding.bigItemImage.setImageResource(item.imageRes)
+            when (item) {
+                is Book -> {
+                    if (item.imageUrl != "") Glide.with(requireContext()).load(item.imageUrl)
+                        .placeholder(R.drawable.book_image).into(binding.bigItemImage)
+                    else binding.bigItemImage.setImageResource(item.imageRes)
+
+                }
+
+                else -> binding.bigItemImage.setImageResource(item.imageRes)
+            }
             binding.bigItemName.setText(item.itemName)
             binding.bigItemID.setText(item.itemId.toString())
 
@@ -138,16 +148,17 @@ class DetailFragment : Fragment() {
 
         return when (item) {
             is Book -> Book(
-                itemId = id,
+                itemId = id.toString(),
                 itemName = name,
                 bookAuthor = binding.bookAuthor.text.toString(),
                 bookPages = binding.bookPages.text.toString().toInt(),
                 isAvailable = true,
-                imageRes = R.drawable.book_image
+                imageRes = R.drawable.book_image,
+                imageUrl = ""
             )
 
             is Newspaper -> Newspaper(
-                itemId = id,
+                itemId = id.toString(),
                 itemName = name,
                 newspaperNumber = binding.newspaperNumber.text.toString().toInt(),
                 month = binding.newspaperMonth.text.toString(),
@@ -157,7 +168,7 @@ class DetailFragment : Fragment() {
 
             is Disk -> Disk(
                 itemName = name,
-                itemId = id,
+                itemId = id.toString(),
                 imageRes = R.drawable.disk_image,
                 diskType = binding.diskType.text.toString(),
                 isAvailable = true

@@ -1,6 +1,5 @@
 package com.example.lib_with_db
 
-
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -38,7 +37,10 @@ class ItemRepository(
         )
 
         val details = BookDetailsEntity(
-            itemId = book.itemId, author = book.bookAuthor, pageCount = book.bookPages
+            itemId = book.itemId,
+            author = book.bookAuthor,
+            pageCount = book.bookPages,
+            imageUrl = book.imageUrl
         )
 
         itemDao.insertBaseItem(baseItem)
@@ -119,7 +121,8 @@ class ItemRepository(
                     bookPages = details.pageCount,
                     isAvailable = base.isAvailable,
                     imageRes = base.imageRes,
-                    createdAt = base.createdAt
+                    createdAt = base.createdAt,
+                    imageUrl = details.imageUrl
                 )
             }
         }
@@ -136,7 +139,8 @@ class ItemRepository(
                     bookPages = details.pageCount,
                     isAvailable = base.isAvailable,
                     imageRes = base.imageRes,
-                    createdAt = base.createdAt
+                    createdAt = base.createdAt,
+                    imageUrl = ""
                 )
             }
         }
@@ -148,12 +152,12 @@ class ItemRepository(
                 val details = itemDao.getNewspaperDetails(base.id) ?: return@mapNotNull null
                 Newspaper(
                     itemId = base.id,
-                    itemName = base.name,
+                    itemName = base.name.toString(),
                     newspaperNumber = details.newspaperNumber,
                     month = details.month,
                     isAvailable = base.isAvailable,
                     imageRes = base.imageRes,
-                    createdAt = base.createdAt
+                    createdAt = base.createdAt.toString(),
                 )
             }
         }
@@ -165,12 +169,12 @@ class ItemRepository(
                 val details = itemDao.getNewspaperDetails(base.id) ?: return@mapNotNull null
                 Newspaper(
                     itemId = base.id,
-                    itemName = base.name,
+                    itemName = base.name.toString(),
                     newspaperNumber = details.newspaperNumber,
                     month = details.month,
                     isAvailable = base.isAvailable,
                     imageRes = base.imageRes,
-                    createdAt = base.createdAt
+                    createdAt = base.createdAt.toString(),
                 )
             }
         }
@@ -182,11 +186,11 @@ class ItemRepository(
                 val details = itemDao.getDiskDetails(base.id) ?: return@mapNotNull null
                 Disk(
                     itemId = base.id,
-                    itemName = base.name,
+                    itemName = base.name.toString(),
                     diskType = details.diskType,
                     isAvailable = base.isAvailable,
                     imageRes = base.imageRes,
-                    createdAt = base.createdAt
+                    createdAt = base.createdAt.toString(),
                 )
             }
         }
@@ -198,11 +202,11 @@ class ItemRepository(
                 val details = itemDao.getDiskDetails(base.id) ?: return@mapNotNull null
                 Disk(
                     itemId = base.id,
-                    itemName = base.name,
+                    itemName = base.name.toString(),
                     diskType = details.diskType,
                     isAvailable = base.isAvailable,
                     imageRes = base.imageRes,
-                    createdAt = base.createdAt
+                    createdAt = base.createdAt.toString(),
                 )
             }
         }
@@ -228,7 +232,8 @@ class ItemRepository(
                 bookPages = details.pageCount,
                 isAvailable = base.isAvailable,
                 imageRes = base.imageRes,
-                createdAt = base.createdAt
+                createdAt = base.createdAt,
+                imageUrl = details.imageUrl
             )
         }
     }
@@ -239,12 +244,12 @@ class ItemRepository(
             val details = itemDao.getNewspaperDetails(base.id) ?: return@mapNotNull null
             Newspaper(
                 itemId = base.id,
-                itemName = base.name,
+                itemName = base.name.toString(),
                 newspaperNumber = details.newspaperNumber,
                 month = details.month,
                 isAvailable = base.isAvailable,
                 imageRes = base.imageRes,
-                createdAt = base.createdAt
+                createdAt = base.createdAt.toString(),
             )
         }
     }
@@ -255,13 +260,17 @@ class ItemRepository(
             val details = itemDao.getDiskDetails(base.id) ?: return@mapNotNull null
             Disk(
                 itemId = base.id,
-                itemName = base.name,
+                itemName = base.name.toString(),
                 diskType = details.diskType,
                 isAvailable = base.isAvailable,
                 imageRes = base.imageRes,
-                createdAt = base.createdAt
+                createdAt = base.createdAt.toString(),
             )
         }
+    }
+
+    suspend fun isItemInDB(item: Item): Boolean {
+        return itemDao.isItemInDB(item.itemId)
     }
 
     suspend fun fillLargeData() {
@@ -270,48 +279,49 @@ class ItemRepository(
         val allItems = (1..100).map { i ->
             when (i % 3) {
                 0 -> BaseItemEntity(
-                    id = i,
+                    id = i.toString(),
                     name = "Book $i",
                     type = "book",
-                    createdAt = System.currentTimeMillis(),
+                    createdAt = System.currentTimeMillis().toString(),
                     isAvailable = true,
                     imageRes = R.drawable.book_image
                 ).also { baseItem ->
                     itemDao.insertBookDetails(
                         BookDetailsEntity(
-                            itemId = i,
+                            itemId = i.toString(),
                             author = "Author ${i % 10}",
                             pageCount = i * 100,
+                            imageUrl = ""
                         )
                     )
                 }
 
                 1 -> BaseItemEntity(
-                    id = i,
+                    id = i.toString(),
                     name = "News $i",
                     type = "newspaper",
-                    createdAt = System.currentTimeMillis(),
+                    createdAt = System.currentTimeMillis().toString(),
                     isAvailable = true,
                     imageRes = R.drawable.newspaper_image
                 ).also { baseItem ->
                     itemDao.insertNewspaperDetails(
                         NewspaperDetailsEntity(
-                            itemId = i, month = "${i % 3 + 1}", newspaperNumber = i + i
+                            itemId = i.toString(), month = "${i % 3 + 1}", newspaperNumber = i + i
                         )
                     )
                 }
 
                 else -> BaseItemEntity(
-                    id = i,
+                    id = i.toString(),
                     name = "Disk $i",
                     type = "disk",
-                    createdAt = System.currentTimeMillis(),
+                    createdAt = System.currentTimeMillis().toString(),
                     isAvailable = true,
                     imageRes = R.drawable.disk_image
                 ).also { baseItem ->
                     itemDao.insertDiskDetails(
                         DiskDetailsEntity(
-                            itemId = i, diskType = if (i % 2 == 0) "CD" else "DVD"
+                            itemId = i.toString(), diskType = if (i % 2 == 0) "CD" else "DVD"
                         )
                     )
                 }
