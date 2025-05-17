@@ -10,16 +10,3 @@ data class Book(
     val imageUrl: String?,
     override val createdAt: String? = System.currentTimeMillis().toString()
 ) : Item(itemId, itemName, isAvailable, createdAt)
-{
-
-
-    companion object {
-        fun createEmptyBook() = Book(
-            itemName = "",
-            bookAuthor = "",
-            bookPages = 0,
-            imageUrl = "",
-            isAvailable = true
-        )
-    }
-}

@@ -5,10 +5,10 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.example.lib_with_db.data.local.entity.BaseItemEntity
-import com.example.lib_with_db.data.local.entity.BookDetailsEntity
-import com.example.lib_with_db.data.local.entity.DiskDetailsEntity
-import com.example.lib_with_db.data.local.entity.NewspaperDetailsEntity
+import local.entity.BaseItemEntity
+import local.entity.BookDetailsEntity
+import local.entity.DiskDetailsEntity
+import local.entity.NewspaperDetailsEntity
 
 @Dao
 interface ItemDao {

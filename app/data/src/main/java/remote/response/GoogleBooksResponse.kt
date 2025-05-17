@@ -1,7 +1,7 @@
 package remote.response
 
 
-import com.example.lib_with_db.common.IdGenerator.generateCustomId
+import com.example.common.IdGenerator
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -13,7 +13,7 @@ data class GoogleBooksResponse(
 
 @Serializable
 data class BookItem(
-    @SerialName("id") val id: String? = generateCustomId(),
+    @SerialName("id") val id: String? = IdGenerator.generateCustomId(),
     @SerialName("volumeInfo") val volumeInfo: VolumeInfo
 )
 

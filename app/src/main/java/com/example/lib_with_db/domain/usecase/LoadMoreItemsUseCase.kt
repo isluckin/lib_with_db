@@ -16,15 +16,15 @@ class LoadMoreItemsUseCase(private val repository: ItemRepository) {
         isForwardPagination: Boolean,
         pageSize: Int,
         initialLoadCount: Int,
-        currentItems: List<Item>
+        currentItemsCount: Int
     ): PaginationResult? {
         return try {
             if (isForwardPagination) {
                 val newItems = repository.getItemsWithLimit(currentOffset, pageSize)
                 if (newItems.isEmpty()) return null
 
-                val itemsToRemove = if (currentItems.size + newItems.size > initialLoadCount) {
-                    minOf(pageSize, currentItems.size + newItems.size - initialLoadCount)
+                val itemsToRemove = if (currentItemsCount + newItems.size > initialLoadCount) {
+                    minOf(pageSize, currentItemsCount + newItems.size - initialLoadCount)
                 } else {
                     0
                 }
@@ -44,8 +44,8 @@ class LoadMoreItemsUseCase(private val repository: ItemRepository) {
                 val newItems = repository.getItemsWithLimit(newOffset, loadSize)
                 if (newItems.isEmpty()) return null
 
-                val itemsToRemove = if (currentItems.size + newItems.size > initialLoadCount) {
-                    minOf(pageSize, currentItems.size + newItems.size - initialLoadCount)
+                val itemsToRemove = if (currentItemsCount + newItems.size > initialLoadCount) {
+                    minOf(pageSize, currentItemsCount + newItems.size - initialLoadCount)
                 } else {
                     0
                 }
@@ -58,9 +58,7 @@ class LoadMoreItemsUseCase(private val repository: ItemRepository) {
                 )
             }
         } catch (e: Exception) {
-            throw PaginationException("Failed to load items: ${e.message}", e)
+            throw Exception("Failed to load items: ${e.message}")
         }
     }
 }
-
-class PaginationException(message: String, cause: Throwable? = null) : Exception(message, cause)

@@ -12,8 +12,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.lib_with_db.presentation.adapter.ItemAdapter
 import com.example.lib_with_db.presentation.view_model.ItemViewModel
-import com.example.lib_with_db.presentation.view_model.ItemViewModel.SortType
 import com.example.lib_with_db.databinding.FragmentListBinding
+import com.example.lib_with_db.presentation.ui_model.SortType
 import kotlinx.coroutines.launch
 
 class ListFragment : Fragment() {
@@ -141,3 +141,4 @@ class ListFragment : Fragment() {
     }
 
 }
+

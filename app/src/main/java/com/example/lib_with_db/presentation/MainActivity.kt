@@ -8,13 +8,13 @@ import android.widget.RadioGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
-import com.example.lib_with_db.Book
-import com.example.lib_with_db.Disk
 import com.example.lib_with_db.presentation.view_model.ItemViewModel
 import com.example.lib_with_db.presentation.view_model.ItemViewModelFactory
-import com.example.lib_with_db.Newspaper
 import com.example.lib_with_db.R
 import com.example.lib_with_db.databinding.ActivityMainBinding
+import com.example.lib_with_db.presentation.ui_model.BookUI
+import com.example.lib_with_db.presentation.ui_model.DiskUI
+import com.example.lib_with_db.presentation.ui_model.NewspaperUI
 import kotlinx.coroutines.launch
 
 
@@ -23,7 +23,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private val viewModel: ItemViewModel by lazy {
         ViewModelProvider(
-            this, ItemViewModelFactory(applicationContext)
+            this, ItemViewModelFactory(applicationContext, getItemsUseCase = )
         ).get(ItemViewModel::class.java)
     }
 
@@ -85,9 +85,9 @@ class MainActivity : AppCompatActivity() {
         val dialog = AlertDialog.Builder(this).setTitle("Add new Item").setView(dialogView)
             .setPositiveButton("Add") { _, _ ->
                 val selectedItem = when (radioGroup.checkedRadioButtonId) {
-                    R.id.addBook -> Book.Companion.createEmptyBook()
-                    R.id.addNews -> Newspaper.Companion.createEmptyNewspaper()
-                    R.id.addDisk -> Disk.Companion.createEmptyDisk()
+                    R.id.addBook -> BookUI.Companion.createEmptyBook()
+                    R.id.addNews -> NewspaperUI.Companion.createEmptyNewspaper()
+                    R.id.addDisk -> DiskUI.Companion.createEmptyDisk()
                     else -> null
                 }
 

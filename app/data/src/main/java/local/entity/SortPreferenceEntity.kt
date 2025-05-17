@@ -1,8 +1,8 @@
 package local.entity
 
-
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+
 
 @Entity(tableName = "sort_preference")
 data class SortPreferenceEntity(

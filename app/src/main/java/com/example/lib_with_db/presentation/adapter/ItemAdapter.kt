@@ -6,14 +6,14 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
-import com.example.lib_with_db.Item
 import com.example.lib_with_db.databinding.LibraryItemBinding
+import com.example.lib_with_db.presentation.ui_model.ItemUI
 
 class ItemAdapter(
-    private val onClick: (Item) -> Unit,
-    private val onLongClick: (Item) -> Unit,
+    private val onClick: (ItemUI) -> Unit,
+    private val onLongClick: (ItemUI) -> Unit,
     private val context: Context?
-) : ListAdapter<Item, ItemViewHolder>(ItemDiffCallback()) {
+) : ListAdapter<ItemUI, ItemViewHolder>(ItemDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ItemViewHolder {
         val binding = LibraryItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
@@ -32,8 +32,8 @@ class ItemAdapter(
 }
 
 
-class ItemDiffCallback : DiffUtil.ItemCallback<Item>() {
-    override fun areItemsTheSame(oldItem: Item, newItem: Item) = oldItem.itemId == newItem.itemId
-    override fun areContentsTheSame(oldItem: Item, newItem: Item) = oldItem == newItem
+class ItemDiffCallback : DiffUtil.ItemCallback<ItemUI>() {
+    override fun areItemsTheSame(oldItem: ItemUI, newItem: ItemUI) = oldItem.itemId == newItem.itemId
+    override fun areContentsTheSame(oldItem: ItemUI, newItem: ItemUI) = oldItem == newItem
 }
 

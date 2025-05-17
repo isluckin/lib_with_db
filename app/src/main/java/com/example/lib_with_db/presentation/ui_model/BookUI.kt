@@ -1,5 +1,7 @@
 package com.example.lib_with_db.presentation.ui_model
 
+import com.example.lib_with_db.R
+
 data class BookUI (
     override val itemId: String = "0",
     override val itemName: String?,
@@ -10,3 +12,15 @@ data class BookUI (
     val imageUrl: String?,
     override val createdAt: String? = System.currentTimeMillis().toString()
 ): ItemUI(itemId, itemName, isAvailable, imageRes, createdAt)
+{
+    companion object {
+        fun createEmptyBook() = BookUI(
+            itemName = "",
+            bookAuthor = "",
+            bookPages = 0,
+            imageUrl = "",
+            isAvailable = true,
+            imageRes = R.drawable.book_image
+        )
+    }
+}

@@ -1,12 +1,11 @@
 package com.example.lib_with_db.presentation.view_model
 
 
-import android.util.Log
+import android.content.Context
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lib_with_db.domain.model.Item
 import com.example.lib_with_db.domain.usecase.AddItemUseCase
 import com.example.lib_with_db.domain.usecase.CheckItemExistsUseCase
 import com.example.lib_with_db.domain.usecase.GetItemsUseCase
@@ -26,14 +25,15 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.random.Random
 
-class ItemViewModel(private val getItemsUseCase: GetItemsUseCase,
-                    private val addItem: AddItemUseCase,
-                    private val loadMoreItemsUseCase: LoadMoreItemsUseCase,
-                    private val checkItemExistsUseCase: CheckItemExistsUseCase,
-                    private val manageSortPreference: ManageSortPreferenceUseCase,
-                    private val searchBooks: SearchBooksUseCase,) : ViewModel() {
-
-
+class ItemViewModel(
+    getItemsUseCase1: Context,
+    private val getItemsUseCase: GetItemsUseCase,
+    private val addItemUseCase: AddItemUseCase,
+    private val loadMoreItemsUseCase: LoadMoreItemsUseCase,
+    private val checkItemExistsUseCase: CheckItemExistsUseCase,
+    private val manageSortPreference: ManageSortPreferenceUseCase,
+    private val searchBooksUseCase: SearchBooksUseCase,
+) : ViewModel() {
 
 
     private val _items = MutableLiveData<List<ItemUI>>()
@@ -63,18 +63,13 @@ class ItemViewModel(private val getItemsUseCase: GetItemsUseCase,
     private var searchJob: Job? = null
     private var operationCount: Int = 0
 
-    var currentlyEditingItem: Item? = null
+    var currentlyEditingItem: ItemUI? = null
     var isInEditMode: Boolean = false
 
 
     init {
-        val db = AppDatabase.getDatabase(context)
-
-        repository = ItemRepository(db.itemDao(), db.sortPreferenceDao())
-
         viewModelScope.launch {
-            repository.fillLargeData()
-            val savedSortType = repository.getSortPreference()
+            val savedSortType = manageSortPreference.getSortPreference()
             _sortType.value = savedSortType
             loadInitialItems()
         }
@@ -84,209 +79,123 @@ class ItemViewModel(private val getItemsUseCase: GetItemsUseCase,
 
         _isLoading.value = true
 
-        val items = when (_sortType.value) {
-
-            SortType.BY_NAME -> repository.getItemsSortedByName(0, initialLoadCount)
-            else -> repository.getItemsSortedByDate(0, initialLoadCount)
-        }
-        _items.postValue(items)
+        val items =
+            getItemsUseCase(_sortType.value, 0, initialLoadCount).map { item -> item.toUI() }
+        _items.value = items
         currentOffset = items.size
         _isLoading.value = false
+    }
+    fun getSortType(): SortType {
+        return _sortType.value
     }
 
     fun setSortType(type: SortType) {
         viewModelScope.launch {
-            repository.saveSortPreference(type)
+            manageSortPreference.saveSortPreference(type)
             _sortType.value = type
-
             refreshData()
         }
     }
 
-    fun getSortType(): SortType {
-        return _sortType.value
-    }
 
     private fun refreshData() {
         viewModelScope.launch {
             _isLoading.value = true
             currentOffset = 0
             val sortType = _sortType.value
-            val items = when (sortType) {
-                SortType.BY_NAME -> repository.getItemsSortedByName(0, initialLoadCount)
-                else -> repository.getItemsSortedByDate(0, initialLoadCount)
-            }
-            _items.postValue(items)
-            currentOffset = items.size
+            val domainItems = getItemsUseCase(sortType, 0, initialLoadCount)
+            _items.value = domainItems.map { item -> item.toUI() }
+            currentOffset = domainItems.size
             _isLoading.value = false
         }
     }
 
     suspend fun loadItems() = withContext(Dispatchers.IO) {
         viewModelScope.launch {
-            try {
-                operationCount++
-                Log.d("!!!", "Operation: $operationCount, Period: ${errorPeriod}")
-                if (operationCount >= errorPeriod) {
-                    Log.d("!!!", "FAKE EXCEPTION")
-                    errorPeriod = getRandom()
-                    throw IllegalStateException("Random error")
+            _isLoading.value = true
+            delay(Random.nextLong(from = 100, until = 2001))
+            val domainItems = getItemsUseCase(_sortType.value, 0, initialLoadCount)
+            _items.value = domainItems.map { item -> item.toUI() }
+            currentOffset = domainItems.size
+            _isLoading.value = false
+        }
+    }
+
+    fun loadMoreItems(isForward: Boolean) {
+        viewModelScope.launch {
+
+            val currentList = _items.value ?: emptyList()
+            val result = loadMoreItemsUseCase(
+                currentOffset = currentOffset,
+                isForwardPagination = isForward,
+                pageSize = pageSize,
+                initialLoadCount = initialLoadCount,
+                currentItemsCount = _items.value?.size ?: 0
+            ) ?: return@launch
+
+            val uiItems = result.newItems.map { item -> item.toUI() }
+
+            val newList = when {
+                result.shouldClearFromStart -> {
+                    val itemsToKeep = if (result.itemsToRemove > 0) {
+                        currentList.drop(result.itemsToRemove)
+                    } else {
+                        currentList
+                    }
+                    itemsToKeep + uiItems
                 }
 
-                _isLoading.value = true
-                delay(Random.nextLong(from = 100, until = 2001))
-
-
-                totalItemsInDb = repository.getAllItemsCount()
-                val loadedItems = repository.getItemsWithLimit(0, initialLoadCount)
-
-                _items.value = loadedItems
-                currentOffset = loadedItems.size
-                _isLoading.value = false
-
-            } catch (e: Exception) {
-                operationCount = 0
-                _errorEvent.postValue("Failed to load items: ${e.message}")
-                _isLoading.value = false
+                else -> {
+                    val itemsToKeep = if (result.itemsToRemove > 0) {
+                        currentList.dropLast(result.itemsToRemove)
+                    } else {
+                        currentList
+                    }
+                    uiItems + itemsToKeep
+                }
             }
+
+            _items.value = newList
+            currentOffset = result.updatedOffset
         }
     }
 
-    private suspend fun loadMoreItemsForward() = withContext(Dispatchers.IO) {
-        if (_isLoading.value) return@withContext
-
-        try {
-            _isLoading.value = true
-            isForwardPagination = true
-
-            val newItems = repository.getItemsWithLimit(currentOffset, pageSize)
-            if (newItems.isEmpty()) {
-                _isLoading.value = false
-                return@withContext
-            }
-
-            val currentItems = _items.value?.toMutableList() ?: mutableListOf()
-            currentItems.addAll(newItems)
-            val itemsToRemove = minOf(pageSize, currentItems.size - newItems.size)
-            if (itemsToRemove > 0) {
-                currentItems.subList(0, itemsToRemove).clear()
-            }
-
-            _items.postValue(currentItems)
-            currentOffset += newItems.size
-
-            _isLoading.value = false
-        } catch (e: Exception) {
-            _errorEvent.postValue("Failed to load more items: ${e.message}")
-            _isLoading.value = false
-        }
+    fun selectItem(item: ItemUI) {
+        _selectedItem.value = item
     }
 
-    private suspend fun loadMoreItemsBackward() = withContext(Dispatchers.IO) {
-        if (_isLoading.value) return@withContext
+    suspend fun addItem(item: ItemUI) = withContext(Dispatchers.IO) {
+        _isLoading.value = true
+        addItemUseCase(item)
 
-        try {
-            _isLoading.value = true
-            isForwardPagination = false
-            val newOffset = maxOf(0, currentOffset - initialLoadCount - pageSize)
-            val loadSize = minOf(pageSize, currentOffset - newOffset)
+        val currentItems = _items.value?.toMutableList() ?: mutableListOf()
+        currentItems.add(item)
+        _items.value = currentItems
+        _scrollPosition.value = currentItems.size - 1
+        _scrollToLast.value = true
+        _isLoading.value = false
 
-            if (loadSize <= 0) {
-                _isLoading.value = false
-                return@withContext
-            }
-            val newItems = repository.getItemsWithLimit(newOffset, loadSize)
-            if (newItems.isEmpty()) {
-                _isLoading.value = false
-                return@withContext
-            }
-            val currentItems = _items.value?.toMutableList() ?: mutableListOf()
-            currentItems.addAll(0, newItems)
-            val itemsToRemove = minOf(pageSize, currentItems.size - newItems.size)
-            if (itemsToRemove > 0) {
-                currentItems.subList(currentItems.size - itemsToRemove, currentItems.size).clear()
-            }
-
-            _items.postValue(currentItems)
-            currentOffset = newOffset
-
-            _isLoading.value = false
-        } catch (e: Exception) {
-            _errorEvent.postValue("Failed to load previous items: ${e.message}")
-            _isLoading.value = false
-        }
-    }
-
-    fun checkPagination(currentIndex: Int) {
-        val currentItems = _items.value ?: return
-
-        if (isForwardPagination && currentIndex >= currentItems.size - threshold) {
-            viewModelScope.launch { loadMoreItemsForward() }
-        } else if (!isForwardPagination && currentIndex <= threshold) {
-            viewModelScope.launch { loadMoreItemsBackward() }
-        }
-    }
-
-    fun selectItem(item: Item) {
-        try {
-            operationCount++
-            Log.d("!!!", "Operation: $operationCount, Period: ${errorPeriod}")
-            if (operationCount >= errorPeriod) {
-                Log.d("!!!", "FAKE EXCEPTION")
-                errorPeriod = getRandom()
-                throw IllegalStateException("Random error")
-            }
-            _selectedItem.value = item
-        } catch (e: Exception) {
-            operationCount = 0
-            _errorEvent.postValue("Failed to select item: ${e.message}")
-        }
-    }
-
-    suspend fun addItem(item: Item) = withContext(Dispatchers.IO) {
-        try {
-            operationCount++
-            Log.d("!!!", "Operation: $operationCount, Period: ${errorPeriod}")
-            if (operationCount >= errorPeriod) {
-                Log.d("!!!", "FAKE EXCEPTION")
-                errorPeriod = getRandom()
-                throw IllegalStateException("Random error")
-            }
-            when (item) {
-                is Book -> repository.saveBook(item)
-                is Newspaper -> repository.saveNewspaper(item)
-                is Disk -> repository.saveDisk(item)
-            }
-
-            totalItemsInDb = repository.getAllItemsCount()
-            val currentItems = _items.value?.toMutableList() ?: mutableListOf()
-            currentItems.add(item)
-            _items.postValue(currentItems)
-            _scrollPosition.postValue(currentItems.size - 1)
-            _scrollToLast.postValue(true)
-        } catch (e: Exception) {
-            operationCount = 0
-            _errorEvent.postValue("Failed to add item: ${e.message}")
-        }
     }
 
 
-    fun clearError() { _errorEvent.value = null }
-    fun resetScrollFlag() { _scrollToLast.value = false }
+    fun resetScrollFlag() {
+        _scrollToLast.value = false
+    }
 
     fun setScrollPos(position: Int) {
         _scrollPosition.value = position
-        checkPagination(position)
     }
 
-    fun clearItems() { _items.value = emptyList() }
+    fun clearItems() {
+        _items.value = emptyList()
+    }
 
     fun searchBook(query: String) {
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
             _isLoading.value = true
             try {
-                val result = searchBooks(query).map{resBook -> resBook.toUI()}
+                val result = searchBooksUseCase(query)
                 _items.value = result
             } catch (e: Exception) {
                 _errorEvent.postValue("Ошибка поиска")
@@ -300,9 +209,12 @@ class ItemViewModel(private val getItemsUseCase: GetItemsUseCase,
     fun handleLongClick(item: ItemUI) {
         viewModelScope.launch(Dispatchers.IO) {
             if (!checkItemExistsUseCase(item.toModel()) && item is BookUI) {
-                addItem(item.toModel())
+                addItemUseCase(item)
             }
         }
     }
-    private fun getRandom(): Int = Random.nextInt(2, 6)
+    fun clearError(){
+        _errorEvent.value = null
+    }
+
 }

@@ -3,6 +3,7 @@ package com.example.lib_with_db.presentation
 
 import android.app.AlertDialog
 import android.os.Bundle
+import android.os.Parcelable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,13 +11,14 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
-import com.example.lib_with_db.Book
-import com.example.lib_with_db.Disk
-import com.example.lib_with_db.Item
 import com.example.lib_with_db.presentation.view_model.ItemViewModel
-import com.example.lib_with_db.Newspaper
 import com.example.lib_with_db.R
 import com.example.lib_with_db.databinding.FragmentDetailBinding
+import com.example.lib_with_db.presentation.ui_mapper.UIMapper.toModel
+import com.example.lib_with_db.presentation.ui_model.BookUI
+import com.example.lib_with_db.presentation.ui_model.DiskUI
+import com.example.lib_with_db.presentation.ui_model.ItemUI
+import com.example.lib_with_db.presentation.ui_model.NewspaperUI
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -28,7 +30,7 @@ class DetailFragment : Fragment() {
     private val binding get() = _binding!!
     private var isEditMode = false
     private val viewModel: ItemViewModel by activityViewModels()
-    private var item: Item? = null
+    private var item: ItemUI? = null
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -100,9 +102,9 @@ class DetailFragment : Fragment() {
             diskType.isEnabled = true
 
             when (item) {
-                is Book -> binding.bookGroup.visibility = View.VISIBLE
-                is Newspaper -> binding.newspaperGroup.visibility = View.VISIBLE
-                is Disk -> binding.diskGroup.visibility = View.VISIBLE
+                is BookUI -> binding.bookGroup.visibility = View.VISIBLE
+                is NewspaperUI -> binding.newspaperGroup.visibility = View.VISIBLE
+                is DiskUI -> binding.diskGroup.visibility = View.VISIBLE
                 else -> {
                     binding.bookGroup.visibility = View.VISIBLE
                     binding.newspaperGroup.visibility = View.VISIBLE
@@ -115,32 +117,32 @@ class DetailFragment : Fragment() {
     private fun fillItemData() {
         item?.let { item ->
             when (item) {
-                is Book -> {
+                is BookUI -> {
                     if (item.imageUrl != "") Glide.with(requireContext()).load(item.imageUrl)
                         .placeholder(R.drawable.book_image).into(binding.bigItemImage)
-                    else binding.bigItemImage.setImageResource(item.imageRes)
+                    else binding.bigItemImage.setImageResource(item.imageRes?: R.drawable.item_image)
 
                 }
 
-                else -> binding.bigItemImage.setImageResource(item.imageRes)
+                else -> binding.bigItemImage.setImageResource(item.imageRes ?: R.drawable.item_image)
             }
             binding.bigItemName.setText(item.itemName)
             binding.bigItemID.setText(item.itemId.toString())
 
             when (item) {
-                is Book -> {
+                is BookUI -> {
                     binding.bookGroup.visibility = View.VISIBLE
                     binding.bookAuthor.setText(item.bookAuthor)
                     binding.bookPages.setText(item.bookPages.toString())
                 }
 
-                is Newspaper -> {
+                is NewspaperUI -> {
                     binding.newspaperGroup.visibility = View.VISIBLE
                     binding.newspaperNumber.setText(item.newspaperNumber.toString())
                     binding.newspaperMonth.setText(item.month)
                 }
 
-                is Disk -> {
+                is DiskUI -> {
                     binding.diskGroup.visibility = View.VISIBLE
                     binding.diskType.setText(item.diskType)
                 }
@@ -148,12 +150,12 @@ class DetailFragment : Fragment() {
         }
     }
 
-    private fun createItemFromInputs(): Item {
+    private fun createItemFromInputs(): ItemUI {
         val name = binding.bigItemName.text.toString()
         val id = binding.bigItemID.text.toString().toIntOrNull() ?: 0
 
         return when (item) {
-            is Book -> Book(
+            is BookUI -> BookUI(
                 itemId = id.toString(),
                 itemName = name,
                 bookAuthor = binding.bookAuthor.text.toString(),
@@ -163,7 +165,7 @@ class DetailFragment : Fragment() {
                 imageUrl = ""
             )
 
-            is Newspaper -> Newspaper(
+            is NewspaperUI -> NewspaperUI(
                 itemId = id.toString(),
                 itemName = name,
                 newspaperNumber = binding.newspaperNumber.text.toString().toInt(),
@@ -172,7 +174,7 @@ class DetailFragment : Fragment() {
                 imageRes = R.drawable.newspaper_image
             )
 
-            is Disk -> Disk(
+            is DiskUI -> DiskUI(
                 itemName = name,
                 itemId = id.toString(),
                 imageRes = R.drawable.disk_image,
@@ -188,10 +190,10 @@ class DetailFragment : Fragment() {
         private const val ITEM_KEY = "item_key"
         private const val EDIT_MODE_KEY = "edit_mode"
 
-        fun newInstance(item: Item?, isEditMode: Boolean = false): DetailFragment {
+        fun newInstance(item: ItemUI?, isEditMode: Boolean = false): DetailFragment {
             val fragment = DetailFragment()
             val args = Bundle().apply {
-                putParcelable(ITEM_KEY, item)
+                putParcelable(ITEM_KEY, item as Parcelable?)
                 putBoolean(EDIT_MODE_KEY, isEditMode)
             }
             fragment.arguments = args

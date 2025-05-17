@@ -8,16 +8,4 @@ data class Newspaper(
     val month: String,
     override val isAvailable: Boolean,
     override val createdAt: String = System.currentTimeMillis().toString()
-) : Item(itemId, itemName, isAvailable, createdAt) {
-
-
-    companion object {
-
-        fun createEmptyNewspaper() = Newspaper(
-            itemName = "",
-            newspaperNumber = 0,
-            month = "",
-            isAvailable = true,
-        )
-    }
-}
+) : Item(itemId, itemName, isAvailable, createdAt)

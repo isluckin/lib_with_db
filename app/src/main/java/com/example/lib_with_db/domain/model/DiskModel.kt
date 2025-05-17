@@ -7,15 +7,4 @@ data class Disk(
     val diskType: String,
     override val isAvailable: Boolean,
     override val createdAt: String = System.currentTimeMillis().toString()
-) : Item(itemId, itemName, isAvailable,  createdAt){
-
-
-    companion object {
-        fun createEmptyDisk() = Disk(
-            itemName = "",
-            diskType = "",
-            isAvailable = true,
-
-        )
-    }
-}
+) : Item(itemId, itemName, isAvailable,  createdAt)

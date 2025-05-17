@@ -1,13 +1,6 @@
 package repository_impl
 
-import com.example.lib_with_db.data.local.DAO.ItemDao
-import com.example.lib_with_db.data.local.DAO.SortPreferenceDao
-import com.example.lib_with_db.data.local.entity.BookDetailsEntity
-import com.example.lib_with_db.data.local.entity.DiskDetailsEntity
-import com.example.lib_with_db.data.local.entity.NewspaperDetailsEntity
-import com.example.lib_with_db.data.local.entity.SortPreferenceEntity
-import com.example.lib_with_db.data.repository_impl.mapper.toDomain
-import com.example.lib_with_db.data.repository_impl.mapper.toEntity
+
 import com.example.lib_with_db.domain.repository.ItemRepository
 import com.example.lib_with_db.domain.model.Book
 import com.example.lib_with_db.domain.model.Disk
@@ -17,6 +10,8 @@ import com.example.lib_with_db.domain.model.SortPreference
 import com.example.lib_with_db.presentation.view_model.ItemViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import local.DAO.ItemDao
+import local.DAO.SortPreferenceDao
 
 class ItemRepositoryImpl(
     private val itemDao: ItemDao, private val sortPreferenceDao: SortPreferenceDao

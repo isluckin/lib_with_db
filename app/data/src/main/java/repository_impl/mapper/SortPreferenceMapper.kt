@@ -1,8 +1,8 @@
 package repository_impl.mapper
 
-import com.example.lib_with_db.data.local.entity.SortPreferenceEntity
 import com.example.lib_with_db.domain.model.SortPreference
 import com.example.lib_with_db.presentation.view_model.ItemViewModel
+import local.entity.SortPreferenceEntity
 
 internal  fun SortPreference.toEntity(): SortPreferenceEntity = SortPreferenceEntity(
     sortType = when(this){

@@ -1,7 +1,9 @@
 package remote.api
-import com.example.lib_with_db.data.remote.response.GoogleBooksResponse
+
+import remote.response.GoogleBooksResponse
 import retrofit2.http.GET
 import retrofit2.http.Query
+
 
 internal interface GoogleBooksAPI {
     @GET("books/v1/volumes")
