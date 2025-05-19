@@ -23,10 +23,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
 import kotlin.random.Random
 
-class ItemViewModel(
-    getItemsUseCase1: Context,
+class ItemViewModel @Inject constructor (
     private val getItemsUseCase: GetItemsUseCase,
     private val addItemUseCase: AddItemUseCase,
     private val loadMoreItemsUseCase: LoadMoreItemsUseCase,

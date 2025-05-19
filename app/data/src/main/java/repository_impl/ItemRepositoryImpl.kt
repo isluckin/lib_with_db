@@ -12,6 +12,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import local.DAO.ItemDao
 import local.DAO.SortPreferenceDao
+import local.entity.BookDetailsEntity
+import local.entity.DiskDetailsEntity
+import local.entity.NewspaperDetailsEntity
+import repository_impl.mapper.toDomain
+import repository_impl.mapper.toEntity
 
 class ItemRepositoryImpl(
     private val itemDao: ItemDao, private val sortPreferenceDao: SortPreferenceDao
