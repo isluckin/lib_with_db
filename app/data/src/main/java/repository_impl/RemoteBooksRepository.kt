@@ -6,7 +6,7 @@ import remote.api.GoogleBooksAPI
 import repository_impl.mapper.toBook
 
 
-internal class RemoteBooksRepository(
+ class RemoteBooksRepository(
     private val api: GoogleBooksAPI
 ) : BookRepository {
     override suspend fun getBooks(query: String): List<Book> {

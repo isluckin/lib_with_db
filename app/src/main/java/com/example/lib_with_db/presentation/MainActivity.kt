@@ -16,22 +16,25 @@ import com.example.lib_with_db.presentation.ui_model.BookUI
 import com.example.lib_with_db.presentation.ui_model.DiskUI
 import com.example.lib_with_db.presentation.ui_model.NewspaperUI
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
-    private val viewModel: ItemViewModel by lazy {
-        ViewModelProvider(
-            this, ItemViewModelFactory(applicationContext, getItemsUseCase = )
-        ).get(ItemViewModel::class.java)
-    }
+
+    @Inject
+    lateinit var viewModelFactory: ItemViewModelFactory
+    private lateinit var viewModel: ItemViewModel
 
     private val isLandscape: Boolean
         get() = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        (application as LibraryApp).appComponent.inject(this)
         super.onCreate(savedInstanceState)
+
+        viewModel = ViewModelProvider(this, viewModelFactory).get(ItemViewModel::class.java)
 
         lifecycleScope.launch {
 
@@ -128,7 +131,8 @@ class MainActivity : AppCompatActivity() {
             if (isLandscape) {
                 supportFragmentManager.beginTransaction()
                     .replace(R.id.list_container, ListFragment())
-                    .replace(R.id.detail_container, DetailFragment.Companion.newInstance(null)).commit()
+                    .replace(R.id.detail_container, DetailFragment.Companion.newInstance(null))
+                    .commit()
             } else {
                 supportFragmentManager.beginTransaction()
                     .replace(R.id.single_container, ListFragment()).commit()
@@ -145,7 +149,9 @@ class MainActivity : AppCompatActivity() {
 
                 if (detailFragment == null) {
                     supportFragmentManager.beginTransaction().replace(
-                        R.id.detail_container, DetailFragment.Companion.newInstance(null), "detailFragment"
+                        R.id.detail_container,
+                        DetailFragment.Companion.newInstance(null),
+                        "detailFragment"
                     ).commit()
                 }
             } else {

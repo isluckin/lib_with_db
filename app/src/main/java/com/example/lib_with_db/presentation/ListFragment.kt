@@ -2,28 +2,39 @@ package com.example.lib_with_db.presentation
 
 
 import android.app.AlertDialog
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.lib_with_db.presentation.adapter.ItemAdapter
 import com.example.lib_with_db.presentation.view_model.ItemViewModel
 import com.example.lib_with_db.databinding.FragmentListBinding
 import com.example.lib_with_db.presentation.ui_model.SortType
+import com.example.lib_with_db.presentation.view_model.ItemViewModelFactory
+import dagger.internal.InjectedFieldSignature
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 class ListFragment : Fragment() {
 
+    @Inject
+    lateinit var viewModelFactory: ViewModelProvider.Factory
+    private lateinit var viewModel: ItemViewModel
     private var _binding: FragmentListBinding? = null
     private val binding get() = _binding!!
-    private val viewModel: ItemViewModel by activityViewModels()
     private lateinit var adapter: ItemAdapter
     private lateinit var layoutManager: LinearLayoutManager
 
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        (requireActivity().application as LibraryApp).appComponent.inject(this)
+    }
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
@@ -33,6 +44,7 @@ class ListFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        viewModel = ViewModelProvider(this, viewModelFactory).get(ItemViewModel::class.java)
         adapter = ItemAdapter(
             onClick = { item -> viewModel.selectItem(item) },
             onLongClick = { item -> viewModel.handleLongClick(item) },

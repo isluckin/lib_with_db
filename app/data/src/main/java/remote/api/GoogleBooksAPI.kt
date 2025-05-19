@@ -5,7 +5,7 @@ import retrofit2.http.GET
 import retrofit2.http.Query
 
 
-internal interface GoogleBooksAPI {
+ interface GoogleBooksAPI {
     @GET("books/v1/volumes")
     suspend fun searchBooks(
         @Query("q") query: String,
